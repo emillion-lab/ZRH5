@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ZRH·5 — Zürich Reality Check</title>
+<style>
+  :root{
+    --ink:#14181c; --paper:#ffffff; --grey:#6b7280; --line:#d7dade;
+    --red:#da291c; --green:#1b7a43; --amber:#b98300; --panel:#f6f7f8;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,'Helvetica Neue',Helvetica,Inter,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);
+       padding:0 16px calc(24px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto;}
+  header{padding:20px 0 14px;border-bottom:3px solid var(--ink);
+         display:flex;justify-content:space-between;align-items:flex-end}
+  h1{font-size:26px;letter-spacing:-.5px;font-weight:800}
+  h1 span{color:var(--red)}
+  .sub{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+  #lang{font:600 12px var(--sans);border:1px solid var(--ink);background:none;color:var(--ink);
+        padding:5px 10px;cursor:pointer;border-radius:2px}
+
+  /* verdict */
+  .verdict{padding:22px 0 16px;border-bottom:1px solid var(--line)}
+  .v-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--grey)}
+  .v-num{font:800 64px/1 var(--sans);letter-spacing:-2px;margin:4px 0 2px}
+  .v-num small{font-size:22px;font-weight:600;letter-spacing:0;color:var(--grey)}
+  .v-status{display:inline-block;font:700 12px var(--sans);text-transform:uppercase;letter-spacing:.08em;
+            padding:4px 10px;color:#fff;border-radius:2px;margin-top:6px}
+  .st-ok{background:var(--green)} .st-edge{background:var(--amber)} .st-no{background:var(--red)}
+
+  /* gauge (signature) */
+  .gauge{margin:18px 0 6px}
+  .g-track{position:relative;height:34px;border:1px solid var(--ink)}
+  .g-zone{position:absolute;top:0;bottom:0}
+  .g-needle{position:absolute;top:-8px;bottom:-8px;width:3px;background:var(--ink);transition:left .25s}
+  .g-needle::after{content:'';position:absolute;top:-6px;left:-5px;border:7px solid transparent;border-top-color:var(--ink)}
+  .g-scale{display:flex;justify-content:space-between;font:500 10px var(--mono);color:var(--grey);margin-top:4px}
+  .g-cap{font-size:11px;color:var(--grey);margin-top:6px}
+
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
+        border:1px solid var(--line);margin:16px 0}
+  .kpi{background:var(--paper);padding:10px 12px}
+  .kpi b{display:block;font:700 20px var(--mono);letter-spacing:-.5px}
+  .kpi span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--grey)}
+  .neg{color:var(--red)} .pos{color:var(--green)}
+
+  section{padding:18px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;
+     display:flex;align-items:baseline;gap:8px}
+  h2::after{content:'';flex:1;height:1px;background:var(--ink)}
+
+  .sl{margin-bottom:14px}
+  .sl-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+  .sl-head b{font-family:var(--mono);font-weight:700}
+  input[type=range]{width:100%;-webkit-appearance:none;height:26px;background:none}
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--ink)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+      background:var(--paper);border:2px solid var(--ink);margin-top:-10px}
+  input[type=range]:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+  canvas{width:100%;height:220px;display:block}
+  .risks li{font-size:13px;line-height:1.55;margin:0 0 8px 0;list-style:none;display:flex;gap:8px}
+  .risks li::before{content:'−';font:800 14px var(--mono);color:var(--red)}
+  .tips li{font-size:13px;line-height:1.5;margin-bottom:8px;list-style:none;display:flex;gap:8px}
+  .tips li::before{content:'→';font:700 13px var(--mono);color:var(--green)}
+  .tips b{font-family:var(--mono)}
+  .presets{display:flex;gap:8px;margin-bottom:12px}
+  .presets button{flex:1;font:600 12px var(--sans);padding:9px 4px;border:1px solid var(--ink);
+     background:var(--paper);color:var(--ink);cursor:pointer;border-radius:2px}
+  .presets button.on{background:var(--ink);color:#fff}
+  table.cmp{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
+  .cmp th{font:600 10px var(--sans);text-transform:uppercase;letter-spacing:.06em;color:var(--grey);
+     text-align:right;padding:4px 6px;border-bottom:1px solid var(--ink)}
+  .cmp th:first-child,.cmp td:first-child{text-align:left}
+  .cmp td{font-family:var(--mono);text-align:right;padding:6px;border-bottom:1px solid var(--line)}
+  footer{padding:16px 0;font-size:11px;color:var(--grey);line-height:1.5}
+  @media (prefers-reduced-motion:reduce){.g-needle{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>ZRH<span>·5</span></h1>
+    <div class="sub" data-i="sub">Цюрих reality check — петчленно семейство, 2026</div>
+  </div>
+  <button id="lang">EN</button>
+</header>
+
+<div class="verdict">
+  <div class="v-label" data-i="vkm">Необходими километри на ден</div>
+  <div class="v-num" id="vkm">—<small> km</small></div>
+  <span class="v-status st-no" id="vstat">—</span>
+
+  <div class="gauge">
+    <div class="g-track" id="gtrack">
+      <div class="g-zone" id="zok" style="left:0;background:#dff0e5"></div>
+      <div class="g-zone" id="zedge" style="background:#f6ecd2"></div>
+      <div class="g-zone" id="zno" style="right:0;background:#f8dedc"></div>
+      <div class="g-needle" id="needle"></div>
+    </div>
+    <div class="g-scale"><span>0</span><span>125</span><span>250</span><span>375</span><span>500 km</span></div>
+    <div class="g-cap" id="gcap"></div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><b id="kNeed">—</b><span data-i="kNeed">Нужда / месец</span></div>
+    <div class="kpi"><b id="kNet">—</b><span data-i="kNet">Нето / изминат km</span></div>
+    <div class="kpi"><b id="kInc">—</b><span data-i="kInc">Реален доход / месец*</span></div>
+    <div class="kpi"><b id="kGap">—</b><span data-i="kGap">Излишък / дефицит</span></div>
+    <div class="kpi"><b id="kHrs">—</b><span data-i="kHrs">Нужни часове / ден</span></div>
+    <div class="kpi"><b id="kRent">—</b><span data-i="kRent">Макс. устойчив наем</span></div>
+  </div>
+</div>
+
+<section>
+  <h2 data-i="h1">Домакинство</h2>
+  <div id="grp1"></div>
+</section>
+
+<section>
+  <h2 data-i="h2">Пазар Цюрих 2026</h2>
+  <div id="grp2"></div>
+</section>
+
+<section>
+  <h2 data-i="h3">Кола и държава</h2>
+  <div id="grp3"></div>
+</section>
+
+<section>
+  <h2 data-i="h4">Режим на каране</h2>
+  <div id="grp4"></div>
+</section>
+
+<section>
+  <h2 data-i="h8">План Б — доход нагоре, не часове нагоре</h2>
+  <div class="presets" id="presets"></div>
+  <div id="cmp"></div>
+  <div id="grp5" style="margin-top:14px"></div>
+</section>
+
+<section>
+  <h2 data-i="h5">Доход срещу km/ден</h2>
+  <canvas id="chart" width="680" height="220"></canvas>
+</section>
+
+<section>
+  <h2 data-i="h6">Заложени минуси 2025–26</h2>
+  <ul class="risks" id="risks"></ul>
+</section>
+
+<section>
+  <h2 data-i="h7">Оптимизация — къде натиска най-силно</h2>
+  <ul class="tips" id="tips"></ul>
+</section>
+
+<footer id="foot"></footer>
+
+<script>
+const T={
+ bg:{sub:'Цюрих reality check — петчленно семейство, 2026',
+  vkm:'Необходими километри на ден',kNeed:'Нужда / месец',kNet:'Нето / изминат km',
+  kInc:'Реален доход / месец*',kGap:'Излишък / дефицит',kHrs:'Нужни часове / ден',
+  kRent:'Макс. устойчив наем',
+  h1:'Домакинство',h2:'Пазар Цюрих 2026',h3:'Кола и държава',h4:'Режим на каране',
+  h5:'Доход срещу km/ден',h6:'Заложени минуси 2025–26',h7:'Оптимизация — къде натиска най-силно',
+  h8:'План Б — доход нагоре, не часове нагоре',
+  ok:'Изпълнимо',edge:'На ръба',no:'Невъзможно',
+  gcap:(k,h)=>`Игла: ${k} km/ден = ${h} ч/ден зад волана. Зелено ≤ реален капацитет, жълто = ръб (ARV лимити), червено = физика/закон.`,
+  inc:'* при твоя максимален режим (часове × дни), не при нужните km.',
+  risks:[
+   'Ценова война Uber–Bolt: промо отстъпки смъкват ефективната тарифа (плъзгач „ценова война“). Отделни курсове паднаха под цената на ÖV билет.',
+   'Standard сегментът е най-ударен — до 50% промо в началните седмици на Bolt; трансферните цени реално ~−50%.',
+   'Комисионни: Uber 25%, Bolt 20% — заложени в микса.',
+   'AHV/SUVA + данък се плащат от теб като самонает (или ~12–15% по-нисък бруто през fleet-наемане).',
+   'Насищане: 400–600 нови Bolt шофьори върху ~4000 такси в кантона → платен дял ~50–55%, не 65%.',
+   'Комерсиална застраховка + Limousinenplakette (ZH) — фикс разходи, вградени в CHF/km на колата.',
+   'Правен риск: статутът „самонает“ е оспорен от Федералния съд (2022) — модел може да се промени рязко.'],
+  tips:[]},
+ en:{sub:'Zürich reality check — family of five, 2026',
+  vkm:'Required kilometres per day',kNeed:'Need / month',kNet:'Net / driven km',
+  kInc:'Real income / month*',kGap:'Surplus / deficit',kHrs:'Hours needed / day',
+  kRent:'Max sustainable rent',
+  h1:'Household',h2:'Zürich market 2026',h3:'Vehicle & state',h4:'Driving regime',
+  h5:'Income vs km/day',h6:'Baked-in downsides 2025–26',h7:'Optimisation — biggest levers',
+  h8:'Plan B — income up, not hours up',
+  ok:'Feasible',edge:'On the edge',no:'Impossible',
+  gcap:(k,h)=>`Needle: ${k} km/day = ${h} h/day behind the wheel. Green ≤ realistic capacity, amber = edge (ARV limits), red = physics/law.`,
+  inc:'* at your max regime (hours × days), not at the required km.',
+  risks:[
+   'Uber–Bolt price war: promo discounts cut the effective tariff (“price war” slider). Some rides dropped below a public-transport ticket.',
+   'Standard segment hit hardest — up to 50% promos at Bolt launch; transfer prices effectively ~−50%.',
+   'Commissions: Uber 25%, Bolt 20% — baked into the mix.',
+   'AHV/SUVA + tax paid by you as self-employed (or ~12–15% lower gross via fleet employment).',
+   'Saturation: 400–600 new Bolt drivers on top of ~4000 canton taxis → paid ratio ~50–55%, not 65%.',
+   'Commercial insurance + Limousinenplakette (ZH) — fixed costs folded into vehicle CHF/km.',
+   'Legal risk: “self-employed” status contested by the Federal Court (2022) — the model can change abruptly.'],
+  tips:[]}
+};
+let L='bg';
+
+const S=[ // id, group, bg label, en label, min, max, step, def, unit, fmt
+ ['rent',1,'Наем (къща с двор, пешеходно училище)','Rent (house w/ yard, walkable school)',3000,7500,50,5250,'CHF'],
+ ['health',1,'Здравна каса (2+3)','Health insurance (2+3)',800,1600,25,1150,'CHF'],
+ ['living',1,'Храна, ток, деца, транспорт','Food, utilities, kids, transport',1400,3200,50,2100,'CHF'],
+ ['reserve',1,'Резерв / непредвидени','Reserve / unforeseen',0,1000,50,400,'CHF'],
+
+ ['premShare',2,'Дял Premium/Comfort поръчки','Premium/Comfort order share',0,100,5,60,'%'],
+ ['grossStd',2,'Бруто CHF / платен km — Standard','Gross CHF / paid km — Standard',1.6,3.0,0.05,2.20,'CHF'],
+ ['grossPrem',2,'Бруто CHF / платен km — Premium','Gross CHF / paid km — Premium',2.2,4.2,0.05,3.00,'CHF'],
+ ['priceWar',2,'Ценова война (ефективна отстъпка)','Price war (effective discount)',0,30,1,12,'%'],
+ ['paidRatio',2,'Платен дял от километрите','Paid share of kilometres',35,75,1,55,'%'],
+
+ ['vehCost',3,'Кола CHF / изминат km (стар EV, всичко)','Vehicle CHF / driven km (used EV, all-in)',0.25,0.70,0.01,0.38,'CHF'],
+ ['taxAHV',3,'AHV/SUVA + данък върху печалбата','AHV/SUVA + tax on profit',10,30,1,20,'%'],
+
+ ['privTrans',5,'Частни трансфери / седмица (фикс цена, 0% комисионна)','Private transfers / week (fixed price, 0% commission)',0,20,1,0,'x'],
+ ['carRent',5,'Втора смяна на колата (отдаване, CHF/мес)','Second shift of the car (rent-out, CHF/mo)',0,2000,100,0,'CHF'],
+ ['sideIncome',5,'Страничен доход — ИТ, консултации (CHF/мес)','Side income — IT, consulting (CHF/mo)',0,5000,100,0,'CHF'],
+
+ ['days',4,'Работни дни / месец','Working days / month',18,28,1,25,'d'],
+ ['maxHrs',4,'Макс. часове зад волана / ден','Max hours behind wheel / day',6,13,0.5,11,'h'],
+ ['speed',4,'Ефективна скорост','Effective speed',18,38,1,26,'km/h'],
+];
+const V={};
+
+function slider(s){
+ const [id,grp,bl,el,min,max,step,def,unit]=s; V[id]=def;
+ const d=document.createElement('div');d.className='sl';
+ d.innerHTML=`<div class="sl-head"><span data-sl="${id}">${L==='bg'?bl:el}</span>
+   <b id="v_${id}"></b></div>
+   <input type="range" id="in_${id}" min="${min}" max="${max}" step="${step}" value="${def}"
+    aria-label="${bl}">`;
+ document.getElementById('grp'+grp).appendChild(d);
+ const inp=d.querySelector('input');
+ inp.addEventListener('input',()=>{V[id]=parseFloat(inp.value);calc();});
+}
+S.forEach(slider);
+
+const chf=v=>Math.round(v).toLocaleString('de-CH')+' CHF';
+
+function netPerKm(){
+ const pw=1-V.priceWar/100, pr=V.paidRatio/100, tax=1-V.taxAHV/100;
+ // premium: thinner demand → paid ratio −5pp; heavier car → +0.04/km
+ const nStd=(pr*V.grossStd*pw*0.75 - V.vehCost)*tax;
+ const nPrem=(Math.max(pr-0.05,0)*V.grossPrem*pw*0.80 - (V.vehCost+0.04))*tax;
+ const mix=V.premShare/100;
+ return {blend: mix*nPrem+(1-mix)*nStd, nStd, nPrem};
+}
+
+function calc(){
+ S.forEach(s=>{const [id,,,,,,step,,unit]=s;
+   const val=V[id];
+   document.getElementById('v_'+id).textContent=
+     (step<1? val.toFixed(2): Math.round(val))+' '+ (unit==='CHF'&&val>50?'CHF':unit);});
+
+ const need=V.rent+V.health+V.living+V.reserve;
+ const {blend}=netPerKm();
+ const nk=Math.max(blend,0.0001);
+ const tax=1-V.taxAHV/100;
+ // Plan B: fixed-price transfers (~100 CHF net of car costs, 0% commission), car rent-out, side income (net)
+ const backupNet=V.privTrans*4.33*100*tax + V.carRent*tax + V.sideIncome;
+ const kmDay=Math.max(need-backupNet,0)/(nk*V.days);
+ const hrsDay=kmDay/V.speed;
+ const capKm=V.maxHrs*V.speed;                  // physical daily capacity
+ const incReal=capKm*nk*V.days + backupNet;     // income at max regime + Plan B
+ const gap=incReal-need;
+ const maxRent=Math.max(incReal-(V.health+V.living+V.reserve),0);
+
+ const t=T[L];
+ document.getElementById('vkm').innerHTML=Math.round(kmDay)+'<small> km</small>';
+ const st=document.getElementById('vstat');
+ let cls,txt;
+ if(hrsDay<=9){cls='st-ok';txt=t.ok}
+ else if(hrsDay<=V.maxHrs){cls='st-edge';txt=t.edge}
+ else {cls='st-no';txt=t.no}
+ st.className='v-status '+cls; st.textContent=txt+' · '+hrsDay.toFixed(1)+' h/'+(L==='bg'?'ден':'day');
+
+ // gauge zones: 0..9h green, 9h..maxHrs amber, rest red; scale 0–500 km
+ const px=v=>Math.min(v/500*100,100);
+ const okEnd=px(9*V.speed), edgeEnd=px(V.maxHrs*V.speed);
+ const zok=document.getElementById('zok'), ze=document.getElementById('zedge'), zn=document.getElementById('zno');
+ zok.style.width=okEnd+'%';
+ ze.style.left=okEnd+'%'; ze.style.width=(edgeEnd-okEnd)+'%';
+ zn.style.left=edgeEnd+'%'; zn.style.width=(100-edgeEnd)+'%';
+ document.getElementById('needle').style.left='calc('+px(kmDay)+'% - 1px)';
+ document.getElementById('gcap').textContent=t.gcap(Math.round(kmDay),hrsDay.toFixed(1));
+
+ document.getElementById('kNeed').textContent=chf(need);
+ document.getElementById('kNet').textContent=nk.toFixed(2)+' CHF';
+ document.getElementById('kInc').textContent=chf(incReal);
+ const g=document.getElementById('kGap');
+ g.textContent=(gap>=0?'+':'−')+chf(Math.abs(gap)).replace(' CHF','')+' CHF';
+ g.className=gap>=0?'pos':'neg';
+ document.getElementById('kHrs').textContent=hrsDay.toFixed(1)+' h';
+ document.getElementById('kRent').textContent=chf(maxRent);
+
+ drawChart(need,nk,capKm);
+ renderCmp(need,tax);
+ renderTips(need,nk,incReal);
+ document.getElementById('foot').textContent=t.inc+' 1 CHF ≈ 1.05 €. '+
+  (L==='bg'?'Данни: тарифи и комисионни Цюрих 2024–26, ценова война Uber–Bolt, твоята софийска калибровка като долна база.':
+   'Data: Zürich tariffs & commissions 2024–26, Uber–Bolt price war, your Sofia calibration as lower baseline.');
+}
+
+function drawChart(need,nk,capKm){
+ const c=document.getElementById('chart'),x=c.getContext('2d');
+ const W=c.width,H=c.height;x.clearRect(0,0,W,H);
+ const kmMax=500,incMax=Math.max(need*1.4, kmMax*nk*V.days);
+ const X=k=>40+(k/kmMax)*(W-50), Y=v=>H-24-(v/incMax)*(H-40);
+ x.strokeStyle='#d7dade';x.lineWidth=1;x.font='10px ui-monospace';x.fillStyle='#6b7280';
+ for(let k=0;k<=kmMax;k+=125){x.beginPath();x.moveTo(X(k),12);x.lineTo(X(k),H-24);x.stroke();
+   x.fillText(k,X(k)-8,H-10);}
+ // need line
+ x.strokeStyle='#da291c';x.lineWidth=1.5;x.setLineDash([5,4]);
+ x.beginPath();x.moveTo(40,Y(need));x.lineTo(W-10,Y(need));x.stroke();x.setLineDash([]);
+ x.fillStyle='#da291c';x.fillText((L==='bg'?'нужда ':'need ')+Math.round(need),44,Y(need)-5);
+ // capacity line
+ x.strokeStyle='#b98300';x.lineWidth=1.5;x.setLineDash([2,3]);
+ x.beginPath();x.moveTo(X(capKm),12);x.lineTo(X(capKm),H-24);x.stroke();x.setLineDash([]);
+ x.fillStyle='#b98300';x.fillText((L==='bg'?'капацитет':'capacity'),X(capKm)+4,22);
+ // income curve
+ x.strokeStyle='#14181c';x.lineWidth=2.5;x.beginPath();
+ for(let k=0;k<=kmMax;k+=5){const v=k*nk*V.days;
+   k===0?x.moveTo(X(k),Y(v)):x.lineTo(X(k),Y(v));}
+ x.stroke();
+}
+
+function renderTips(need,nk,incReal){
+ const base=incReal;
+ const test=(mut)=>{const save={...V};Object.assign(V,mut);
+   const r=netPerKm().blend*V.maxHrs*V.speed*V.days;Object.assign(V,save);return r-base;};
+ const dPaid=test({paidRatio:Math.min(V.paidRatio+5,75)});
+ const dPrem=test({premShare:Math.min(V.premShare+20,100)});
+ const dWar=test({priceWar:Math.max(V.priceWar-6,0)});
+ const dRent=500;
+ const bg=L==='bg';
+ const items=[
+  [dPaid,bg?`+5 п.п. платен дял (позициониране à la BAK: летище, гара, събития) = <b>+${Math.round(dPaid)} CHF/мес</b> — най-силният лост зад волана.`:`+5 pp paid ratio (BAK-style positioning: airport, station, events) = <b>+${Math.round(dPaid)} CHF/mo</b> — strongest lever behind the wheel.`],
+  [dPrem,bg?`+20 п.п. Premium дял = <b>${dPrem>=0?'+':''}${Math.round(dPrem)} CHF/мес</b>. Стара лукс Tesla в Bolt Premium (−20% комисионна) вместо Standard.`:`+20 pp Premium share = <b>${dPrem>=0?'+':''}${Math.round(dPrem)} CHF/mo</b>. Used luxury Tesla on Bolt Premium (−20% commission) instead of Standard.`],
+  [dWar,bg?`Ако войната утихне с 6 п.п. = <b>+${Math.round(dWar)} CHF/мес</b> — извън твой контрол; не го залагай в плана.`:`If the price war eases by 6 pp = <b>+${Math.round(dWar)} CHF/mo</b> — outside your control; don't plan on it.`],
+  [dRent,bg?`−500 CHF наем = <b>+500 CHF/мес</b> гарантирани. Наемът е единственият лост без волан: Bülach/Embrach вместо Goldküste дава −1500 при същото пешеходно училище.`:`−500 CHF rent = <b>+500 CHF/mo</b> guaranteed. Rent is the only non-wheel lever: Bülach/Embrach vs Goldküste saves −1500 with the same walkable school.`],
+  [1,bg?`Часовата истина: под ~${(need/(V.days*V.maxHrs)).toFixed(0)} CHF/час нето месецът не се затваря. Мери часа, не километъра.`:`Hourly truth: below ~${(need/(V.days*V.maxHrs)).toFixed(0)} CHF/h net the month doesn't close. Measure the hour, not the km.`]
+ ];
+ document.getElementById('tips').innerHTML=items.map(i=>`<li><span>${i[1]}</span></li>`).join('');
+}
+
+// --- Plan B: vehicle strategy presets ---
+const PRESETS=[
+ {id:'std', bg:'Standard (бюджетна)', en:'Standard (budget)',
+  set:{premShare:0, grossStd:2.20, priceWar:15, vehCost:0.34, paidRatio:58}},
+ {id:'mix', bg:'Comfort микс (стара Tesla)', en:'Comfort mix (used Tesla)',
+  set:{premShare:60, grossPrem:3.00, priceWar:12, vehCost:0.38, paidRatio:55}},
+ {id:'lux', bg:'Lux/Black (S-класа, Model S)', en:'Lux/Black (S-Class, Model S)',
+  set:{premShare:100, grossPrem:4.40, priceWar:5, vehCost:0.58, paidRatio:48}},
+];
+let activePreset='mix';
+
+function netForPreset(p){
+ const save={...V}; Object.assign(V,p.set);
+ const nk=netPerKm().blend; Object.assign(V,save);
+ return nk;
+}
+
+function renderPresets(){
+ const box=document.getElementById('presets');
+ box.innerHTML=PRESETS.map(p=>
+   `<button data-p="${p.id}" class="${p.id===activePreset?'on':''}">${L==='bg'?p.bg:p.en}</button>`).join('');
+ box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+   activePreset=b.dataset.p;
+   const p=PRESETS.find(x=>x.id===activePreset);
+   Object.entries(p.set).forEach(([k,v])=>{V[k]=v;
+     const inp=document.getElementById('in_'+k); if(inp) inp.value=v;});
+   renderPresets(); calc();
+ }));
+}
+
+function renderCmp(need,tax){
+ const bg=L==='bg';
+ const backupNet=V.privTrans*4.33*100*tax + V.carRent*tax + V.sideIncome;
+ const rows=PRESETS.map(p=>{
+   const nk=netForPreset(p);
+   const inc=V.maxHrs*V.speed*nk*V.days + backupNet;
+   const gap=inc-need;
+   return `<tr><td>${bg?p.bg:p.en}</td><td>${nk.toFixed(2)}</td><td>${Math.round(inc).toLocaleString('de-CH')}</td>
+     <td class="${gap>=0?'pos':'neg'}">${gap>=0?'+':'−'}${Math.round(Math.abs(gap)).toLocaleString('de-CH')}</td></tr>`;
+ }).join('');
+ document.getElementById('cmp').innerHTML=
+  `<table class="cmp"><tr><th>${bg?'Стратегия':'Strategy'}</th><th>CHF/km</th>
+   <th>${bg?'Доход/мес':'Income/mo'}</th><th>${bg?'Баланс':'Balance'}</th></tr>${rows}</table>
+   <div style="font-size:11px;color:var(--grey)">${bg
+    ?'При твоя максимален режим + План Б отдолу. Lux: по-висока тарифа и по-малко промо, но по-скъпа кола и по-тънко търсене (−7 п.п. платен дял).'
+    :'At your max regime + Plan B below. Lux: higher tariff and less promo, but pricier car and thinner demand (−7 pp paid ratio).'}</div>`;
+}
+
+function renderStatic(){
+ const t=T[L];
+ document.querySelectorAll('[data-i]').forEach(e=>{if(t[e.dataset.i])e.textContent=t[e.dataset.i];});
+ document.querySelectorAll('[data-sl]').forEach(e=>{
+   const s=S.find(x=>x[0]===e.dataset.sl); e.textContent=L==='bg'?s[2]:s[3];});
+ document.getElementById('risks').innerHTML=t.risks.map(r=>`<li><span>${r}</span></li>`).join('');
+ document.documentElement.lang=L;
+}
+document.getElementById('lang').addEventListener('click',()=>{
+ L=L==='bg'?'en':'bg';
+ document.getElementById('lang').textContent=L==='bg'?'EN':'БГ';
+ renderStatic();renderPresets();calc();
+});
+renderStatic();renderPresets();calc();
+</script>
+</body>
+</html>
