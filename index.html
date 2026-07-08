@@ -173,7 +173,7 @@ const T={
   gcap:(k,h)=>`Игла: ${k} km/ден = ${h} ч/ден зад волана. Зелено ≤ реален капацитет, жълто = ръб (ARV лимити), червено = физика/закон.`,
   inc:'* при твоя максимален режим (часове × дни), не при нужните km.',
   risks:[
-   'Ценова война Uber–Bolt: промо отстъпки смъкват ефективната тарифа (плъзгач „ценова война“). Отделни курсове паднаха под цената на ÖV билет.',
+   'Ценова война Uber–Bolt: базовите тарифи 2026 вече я включват — плъзгачът „ценова война“ е само за ДОПЪЛНИТЕЛНО влошаване, не я брой два пъти.',
    'Standard сегментът е най-ударен — до 50% промо в началните седмици на Bolt; трансферните цени реално ~−50%.',
    'Комисионни: Uber 25%, Bolt 20% — заложени в микса.',
    'AHV/SUVA + данък се плащат от теб като самонает (или ~12–15% по-нисък бруто през fleet-наемане).',
@@ -192,7 +192,7 @@ const T={
   gcap:(k,h)=>`Needle: ${k} km/day = ${h} h/day behind the wheel. Green ≤ realistic capacity, amber = edge (ARV limits), red = physics/law.`,
   inc:'* at your max regime (hours × days), not at the required km.',
   risks:[
-   'Uber–Bolt price war: promo discounts cut the effective tariff (“price war” slider). Some rides dropped below a public-transport ticket.',
+   'Uber–Bolt price war: 2026 base tariffs already include it — the “price war” slider is for ADDITIONAL deterioration only, don\'t count it twice.',
    'Standard segment hit hardest — up to 50% promos at Bolt launch; transfer prices effectively ~−50%.',
    'Commissions: Uber 25%, Bolt 20% — baked into the mix.',
    'AHV/SUVA + tax paid by you as self-employed (or ~12–15% lower gross via fleet employment).',
@@ -210,13 +210,13 @@ const S=[ // id, group, bg label, en label, min, max, step, def, unit, fmt
  ['reserve',1,'Резерв / непредвидени','Reserve / unforeseen',0,1000,50,400,'CHF'],
 
  ['premShare',2,'Дял Premium/Comfort поръчки','Premium/Comfort order share',0,100,5,60,'%'],
- ['grossStd',2,'Бруто CHF / платен km — Standard','Gross CHF / paid km — Standard',1.6,3.0,0.05,2.20,'CHF'],
- ['grossPrem',2,'Бруто CHF / платен km — Premium','Gross CHF / paid km — Premium',2.2,4.2,0.05,3.00,'CHF'],
- ['priceWar',2,'Ценова война (ефективна отстъпка)','Price war (effective discount)',0,30,1,12,'%'],
+ ['grossStd',2,'Бруто CHF / платен km — Standard (km+мин+начална)','Gross CHF / paid km — Standard (km+min+base)',2.2,4.2,0.05,3.20,'CHF'],
+ ['grossPrem',2,'Бруто CHF / платен km — Premium (km+мин+начална)','Gross CHF / paid km — Premium (km+min+base)',3.0,5.6,0.05,4.50,'CHF'],
+ ['priceWar',2,'Ценова война (допълнителна отстъпка)','Price war (additional discount)',0,30,1,5,'%'],
  ['paidRatio',2,'Платен дял от километрите','Paid share of kilometres',35,75,1,55,'%'],
 
- ['vehCost',3,'Кола CHF / изминат km (стар EV, всичко)','Vehicle CHF / driven km (used EV, all-in)',0.25,0.70,0.01,0.38,'CHF'],
- ['taxAHV',3,'AHV/SUVA + данък върху печалбата','AHV/SUVA + tax on profit',10,30,1,20,'%'],
+ ['vehCost',3,'Кола CHF / изминат km (стар EV, всичко)','Vehicle CHF / driven km (used EV, all-in)',0.25,0.70,0.01,0.33,'CHF'],
+ ['taxAHV',3,'AHV/SUVA + данък (семейни облекчения, 3 деца)','AHV/SUVA + tax (family deductions, 3 kids)',8,30,1,13,'%'],
 
  ['privTrans',5,'Частни трансфери / седмица (фикс цена, 0% комисионна)','Private transfers / week (fixed price, 0% commission)',0,20,1,0,'x'],
  ['carRent',5,'Втора смяна на колата (отдаване, CHF/мес)','Second shift of the car (rent-out, CHF/mo)',0,2000,100,0,'CHF'],
@@ -352,11 +352,11 @@ function renderTips(need,nk,incReal){
 // --- Plan B: vehicle strategy presets ---
 const PRESETS=[
  {id:'std', bg:'Standard (бюджетна)', en:'Standard (budget)',
-  set:{premShare:0, grossStd:2.20, priceWar:15, vehCost:0.34, paidRatio:58}},
+  set:{premShare:0, grossStd:3.20, priceWar:8, vehCost:0.30, paidRatio:58}},
  {id:'mix', bg:'Comfort микс (стара Tesla)', en:'Comfort mix (used Tesla)',
-  set:{premShare:60, grossPrem:3.00, priceWar:12, vehCost:0.38, paidRatio:55}},
+  set:{premShare:60, grossPrem:4.50, priceWar:5, vehCost:0.33, paidRatio:55}},
  {id:'lux', bg:'Lux/Black (S-класа, Model S)', en:'Lux/Black (S-Class, Model S)',
-  set:{premShare:100, grossPrem:4.40, priceWar:5, vehCost:0.58, paidRatio:48}},
+  set:{premShare:100, grossPrem:5.30, priceWar:0, vehCost:0.52, paidRatio:48}},
 ];
 let activePreset='mix';
 
